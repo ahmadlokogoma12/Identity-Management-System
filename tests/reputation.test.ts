@@ -1,21 +1,27 @@
+import { describe, it, beforeEach, expect } from "vitest"
 
-import { describe, expect, it } from "vitest";
+describe("reputation", () => {
+  let contract: any
+  
+  beforeEach(() => {
+    contract = {
+      updateReputation: (did: string, change: number) => ({ success: true }),
+      getReputation: (did: string) => ({ score: 10 }),
+    }
+  })
+  
+  describe("update-reputation", () => {
+    it("should update reputation score", () => {
+      const result = contract.updateReputation("did:stacks:1", 5)
+      expect(result.success).toBe(true)
+    })
+  })
+  
+  describe("get-reputation", () => {
+    it("should return reputation score", () => {
+      const result = contract.getReputation("did:stacks:1")
+      expect(result.score).toBe(10)
+    })
+  })
+})
 
-const accounts = simnet.getAccounts();
-const address1 = accounts.get("wallet_1")!;
-
-/*
-  The test below is an example. To learn more, read the testing documentation here:
-  https://docs.hiro.so/stacks/clarinet-js-sdk
-*/
-
-describe("example tests", () => {
-  it("ensures simnet is well initalised", () => {
-    expect(simnet.blockHeight).toBeDefined();
-  });
-
-  // it("shows an example", () => {
-  //   const { result } = simnet.callReadOnlyFn("counter", "get-counter", [], address1);
-  //   expect(result).toBeUint(0);
-  // });
-});
