@@ -1,64 +1,43 @@
-;; Credential Issuance Contract
+;; Verification Contract
 
-(define-map credentials
-  { credential-id: uint }
+(define-map verifications
+  { verification-id: uint }
   {
-    issuer: principal,
-    holder: (string-ascii 64),
-    type: (string-ascii 64),
-    data: (string-utf8 1024),
-    issued-at: uint,
-    expiration: uint
+    verifier: principal,
+    credential-id: uint,
+    result: bool,
+    timestamp: uint
   }
 )
 
-(define-map credential-types
-  { type: (string-ascii 64) }
-  { issuer: principal }
-)
+(define-data-var verification-nonce uint u0)
 
-(define-data-var credential-nonce uint u0)
-
-(define-constant CONTRACT_OWNER tx-sender)
 (define-constant ERR_UNAUTHORIZED (err u401))
 (define-constant ERR_NOT_FOUND (err u404))
 
-(define-public (register-credential-type (type (string-ascii 64)))
-  (begin
-    (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR_UNAUTHORIZED)
-    (map-set credential-types
-      { type: type }
-      { issuer: tx-sender }
-    )
-    (ok true)
-  )
-)
-
-(define-public (issue-credential (holder (string-ascii 64)) (type (string-ascii 64)) (data (string-utf8 1024)) (expiration uint))
+(define-public (verify-credential (credential-id uint))
   (let
     (
-      (issuer tx-sender)
-      (credential-type (unwrap! (map-get? credential-types { type: type }) ERR_NOT_FOUND))
-      (credential-id (+ (var-get credential-nonce) u1))
+      (verifier tx-sender)
+      (credential (unwrap! (contract-call? .credential-issuance get-credential credential-id) ERR_NOT_FOUND))
+      (verification-id (+ (var-get verification-nonce) u1))
     )
-    (asserts! (is-eq issuer (get issuer credential-type)) ERR_UNAUTHORIZED)
-    (map-set credentials
-      { credential-id: credential-id }
+    ;; In a real-world scenario, implement more sophisticated verification logic
+    (map-set verifications
+      { verification-id: verification-id }
       {
-        issuer: issuer,
-        holder: holder,
-        type: type,
-        data: data,
-        issued-at: block-height,
-        expiration: expiration
+        verifier: verifier,
+        credential-id: credential-id,
+        result: true,
+        timestamp: block-height
       }
     )
-    (var-set credential-nonce credential-id)
-    (ok credential-id)
+    (var-set verification-nonce verification-id)
+    (ok verification-id)
   )
 )
 
-(define-read-only (get-credential (credential-id uint))
-  (map-get? credentials { credential-id: credential-id })
+(define-read-only (get-verification (verification-id uint))
+  (map-get? verifications { verification-id: verification-id })
 )
 
